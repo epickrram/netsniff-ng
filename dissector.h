@@ -80,6 +80,7 @@ static inline void __show_frame_hdr(uint8_t *packet, size_t len, int linktype,
 			v3 ? hdr.h3->tp_len : hdr.h2->tp_len);
 		break;
 	default:
+        /*
 		tprintf("%s %s %u %us.%uns %s\n",
 			packet_types[pkttype] ? : "?",
 			if_indextoname(s_ll->sll_ifindex, tmp) ? : "?",
@@ -87,6 +88,7 @@ static inline void __show_frame_hdr(uint8_t *packet, size_t len, int linktype,
 			v3 ? hdr.h3->tp_sec : hdr.h2->tp_sec,
 			v3 ? hdr.h3->tp_nsec : hdr.h2->tp_nsec,
 			v3 ? "" : __show_ts_source(hdr.h2->tp_status));
+        */
 		break;
 	}
 }

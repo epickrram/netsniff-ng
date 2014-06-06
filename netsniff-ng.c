@@ -345,6 +345,8 @@ static void receive_to_xmit(struct ctx *ctx)
 	struct pollfd rx_poll;
 	struct sock_fprog bpf_ops;
 
+    printf("executing receive_to_xmit\n");
+
 	if (!strncmp(ctx->device_in, ctx->device_out, IFNAMSIZ))
 		panic("Ingress/egress devices must be different!\n");
 	if (!device_up_and_running(ctx->device_out))
@@ -770,6 +772,26 @@ static int begin_single_pcap_file(struct ctx *ctx)
 	return fd;
 }
 
+static void log_dropped_packets(int sock, struct ctx *ctx)
+{
+	int ret;
+	struct tpacket_stats kstats;
+	socklen_t slen = sizeof(kstats);
+
+	fmemset(&kstats, 0, sizeof(kstats));
+
+	ret = getsockopt(sock, SOL_PACKET, PACKET_STATISTICS, &kstats, &slen);
+	if (unlikely(ret))
+		panic("Cannot get packet statistics!\n");
+
+        if(kstats.tp_drops != 0)
+        {
+		    printf(".(+%u/-%u)\n", kstats.tp_packets - kstats.tp_drops,
+		       kstats.tp_drops);
+		    fflush(stdout);
+        }
+}
+
 static void print_pcap_file_stats(int sock, struct ctx *ctx)
 {
 	int ret;
@@ -782,11 +804,11 @@ static void print_pcap_file_stats(int sock, struct ctx *ctx)
 	if (unlikely(ret))
 		panic("Cannot get packet statistics!\n");
 
-	if (ctx->print_mode == PRINT_NONE) {
-		printf(".(+%u/-%u)", kstats.tp_packets - kstats.tp_drops,
+//	if (ctx->print_mode == PRINT_NONE) {
+		printf(".(+%u/-%u)\n", kstats.tp_packets - kstats.tp_drops,
 		       kstats.tp_drops);
 		fflush(stdout);
-	}
+//	}
 }
 
 static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
@@ -820,9 +842,12 @@ static void walk_t3_block(struct block_desc *pbd, struct ctx *ctx,
 				panic("Write error to pcap!\n");
 		}
 
+//        printf("Show frame header\n");
 		__show_frame_hdr(packet, hdr->tp_snaplen, ctx->link_type, sll,
 				 hdr, ctx->print_mode, true);
+        
 
+//        printf("dissector_entry_point\n");
 		dissector_entry_point(packet, hdr->tp_snaplen, ctx->link_type,
 				      ctx->print_mode);
 next:
@@ -835,6 +860,7 @@ next:
 				break;
 			}
 		}
+
 
 		if (dump_to_pcap(ctx)) {
 			if (ctx->dump_mode == DUMP_INTERVAL_SIZE) {
@@ -849,8 +875,8 @@ next:
 				*fd = next_multi_pcap_file(ctx, *fd);
 				next_dump = false;
 
-				if (unlikely(ctx->verbose))
-					print_pcap_file_stats(sock, ctx);
+				//if (unlikely(ctx->verbose))
+					//print_pcap_file_stats(sock, ctx);
 			}
 		}
 	}
@@ -938,7 +964,12 @@ static void recv_only_or_dump(struct ctx *ctx)
 	while (likely(sigint == 0)) {
 		while (user_may_pull_from_rx_block((pbd = (void *)
 				rx_ring.frames[it].iov_base))) {
+            //printf("Found recv packet at index %d\n", it);
 			walk_t3_block(pbd, ctx, sock, &fd, &frame_count);
+            if((it & 63) == 0)
+            {
+                log_dropped_packets(sock, ctx);
+            }
 
 			kernel_may_pull_from_rx_block(pbd);
 			it = (it + 1) % rx_ring.layout3.tp_block_nr;
@@ -1352,13 +1383,16 @@ int main(int argc, char **argv)
 		if (!ctx.device_out) {
 			ctx.dump = 0;
 			main_loop = recv_only_or_dump;
+            printf("main_loop = recv_only_or_dump");
 		} else if (device_mtu(ctx.device_out)) {
 			register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 			main_loop = receive_to_xmit;
+            printf("main_loop = receive_to_xmit");
 		} else {
 			ctx.dump = 1;
 			register_signal_f(SIGALRM, timer_next_dump, SA_SIGINFO);
 			main_loop = recv_only_or_dump;
+            printf("main_loop = recv_only_or_dump");
 			if (!ops_touched)
 				ctx.pcap = PCAP_OPS_SG;
 		}
@@ -1366,6 +1400,7 @@ int main(int argc, char **argv)
 		if (ctx.device_out && device_mtu(ctx.device_out)) {
 			register_signal_f(SIGALRM, timer_elapsed, SA_SIGINFO);
 			main_loop = pcap_to_xmit;
+            printf("main_loop = pcap_to_xmit");
 			if (!ops_touched)
 				ctx.pcap = PCAP_OPS_MM;
 		} else {

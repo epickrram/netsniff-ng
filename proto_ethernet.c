@@ -49,7 +49,7 @@ static void ethernet(struct pkt_buff *pkt)
 
 	src_mac = eth->h_source;
 	dst_mac = eth->h_dest;
-
+    /*
 	tprintf(" [ Eth ");
 	tprintf("MAC (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x => ",
 		src_mac[0], src_mac[1], src_mac[2],
@@ -67,7 +67,7 @@ static void ethernet(struct pkt_buff *pkt)
 	tprintf(" [ Vendor ");
 	tprintf("(%s => %s)", ether_lookup_addr(src_mac), ether_lookup_addr(dst_mac));
 	tprintf(" ]\n");
-
+    */
 	pkt_set_proto(pkt, &eth_lay2, ntohs(eth->h_proto));
 }
 

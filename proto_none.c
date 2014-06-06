@@ -61,13 +61,14 @@ void hex_ascii(struct pkt_buff *pkt)
 {
 	size_t   len = pkt_len(pkt);
 	uint8_t *ptr = pkt_pull(pkt, len);
-
+    /*
 	if (len) {
 		_ascii(ptr, len);
 		_hex(ptr, len);
 	}
 
 	tprintf("\n");
+    */
 }
 
 static void none_less(struct pkt_buff *pkt __maybe_unused)

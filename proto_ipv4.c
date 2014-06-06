@@ -58,6 +58,7 @@ static void ipv4(struct pkt_buff *pkt)
 		trailer = pkt->data + h_tot_len + trailer_len;
 	}
 
+    /*
 	if (trailer_len) {
 		 tprintf(" [ Eth trailer ");
 		 while (trailer_len--) {
@@ -87,6 +88,7 @@ static void ipv4(struct pkt_buff *pkt)
 		tprintf("%s should be 0x%.4x%s", colorize_start_full(black, red),
 			csum_expected(ip->h_check, csum), colorize_end());
 	tprintf(" ]\n");
+    */
 
 	memset(&sas, 0, sizeof(sas));
 	sas.sin_family = PF_INET;

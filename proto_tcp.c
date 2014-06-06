@@ -64,7 +64,21 @@ static void tcp(struct pkt_buff *pkt)
 
 	src_name = lookup_port_tcp(src);
 	dest_name = lookup_port_tcp(dest);
-
+    if(dest == 17000) {
+        size_t   len = pkt_len(pkt);
+        uint8_t *ptr = pkt_pull(pkt, len);
+        printf("Packet captured (%d), payload length: %d, data offset: %u\n", ntohl(tcp->seq), len, tcp->doff);
+        //printf("packet pointer currently at %d\n", pkt->data);
+        //struct payload *payload = (struct payload *) pkt_pull(pkt, payload_length);
+        ptr += (tcp->doff - 5) * 4;
+        len -= (tcp->doff - 5) * 4;
+        int i = 0;
+        for(; len-- > 0; ptr++)
+        {
+            printf("%d: %02x (%c)\n", i++, *ptr, *ptr);
+        }
+    }
+    /*
 	tprintf(" [ TCP ");
 	tprintf("Port (%u", src);
 	if (src_name)
@@ -101,6 +115,7 @@ static void tcp(struct pkt_buff *pkt)
 	tprintf("CSum (0x%.4x), ", ntohs(tcp->check));
 	tprintf("UrgPtr (%u)", ntohs(tcp->urg_ptr));
 	tprintf(" ]\n");
+    */
 }
 
 static void tcp_less(struct pkt_buff *pkt)
